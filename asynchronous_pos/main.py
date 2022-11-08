@@ -38,7 +38,21 @@ def display_catalogue(catalogue):
 
     print("\n------------------------------\n")
 
+async def add_item(inventory, item_id):
+    stock_level, item = await asyncio.gather(
+        inventory.get_stock(item_id), inventory.get_item(item_id)
+    )
 
+    if stock_level == 0:
+        return False, item_id
+
+    success = await inventory.decrement_stock(item_id)
+    # This may not be successful because in the time we waited
+    # to get the stock and item the stock level may have decreased.
+    if not success:
+        return False, item_id
+
+    return True, item_id
 async def take_order(inventory, order):
     print('Please enter the number of items that you would like to add to your order. Enter q to complete your order.')
     while True:
@@ -47,9 +61,16 @@ async def take_order(inventory, order):
             return order
         elif validate_order_number(item_num):
             item_num = int(item_num)
-            order.append(inventory.get_item(item_num))
+            success, item_num = await add_item(inventory, item_num)
+            if success:
+                order.append(inventory.get_item(item_num))
+            else:
+                order.append('Unfortunately item number 1 is out of stock and has been removed from your order. Sorry!')
+
+
         else:
             print('Please enter a valid number')
+
 
 
 def validate_order_number(order_number):
@@ -76,6 +97,7 @@ async def main():
     sides = []
     drinks = []
     combos = []
+    out_of_stock = []
     cost = 0
     inventory = Inventory()
     print('Welcome to the ProgrammingExpert Burger Bar!')
@@ -84,14 +106,15 @@ async def main():
     await take_order(inventory, order)
     print('Here is a summary of your order: ')
     for food in await asyncio.gather(*order):
+        # if type(food) != str:
         if food['category'] == 'Burgers':
             burgers.append(food)
         elif food['category'] == 'Sides':
             sides.append(food)
         elif food['category'] == 'Drinks':
             drinks.append(food)
-        else:
-            print('Item doesnt exist')
+        # else:
+        #     out_of_stock.append(food)
 
     burgers = list(sorted(burgers, key=lambda item: item['price'], reverse=True))
     sides = list(sorted(sides, key=lambda item: item['price'], reverse=True))

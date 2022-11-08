@@ -47,7 +47,7 @@ class Inventory:
             }
         }
         self._generate_item_lookup_dict()
-        self.stock = {i + 1: random.randint(0, 15)
+        self.stock = {i + 1: random.randint(1, 2)
                       for i in range(len(self.items))}
 
     def _generate_item_lookup_dict(self):
