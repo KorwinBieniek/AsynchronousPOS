@@ -38,6 +38,7 @@ def display_catalogue(catalogue):
 
     print("\n------------------------------\n")
 
+
 async def take_order(inventory, order):
     print('Please enter the number of items that you would like to add to your order. Enter q to complete your order.')
     while True:
@@ -50,13 +51,31 @@ async def take_order(inventory, order):
         else:
             print('Please enter a valid number')
 
+
 def validate_order_number(order_number):
-    if order_number.isdigit() and int(order_number) in [1,2,3]:
+    if order_number.isdigit():
         return True
     return False
 
+
+async def sort_order(burgers, sides, drinks):
+    burgers = list(sorted(burgers, key=lambda item: item['price'], reverse=True))
+    sides = list(sorted(sides, key=lambda item: item['price'], reverse=True))
+    drinks = list(sorted(drinks, key=lambda item: item['price'], reverse=True))
+    print(burgers)
+    print(sides)
+    print(drinks)
+    while len(burgers) > 0 and len(sides) > 0 and len(drinks) > 0:
+        combos.append([burgers.pop(0), sides.pop(0), drinks.pop(0)])
+    print(combos)
+
+
 async def main():
     order = []
+    burgers = []
+    sides = []
+    drinks = []
+    combos = []
     cost = 0
     inventory = Inventory()
     print('Welcome to the ProgrammingExpert Burger Bar!')
@@ -65,12 +84,46 @@ async def main():
     await take_order(inventory, order)
     print('Here is a summary of your order: ')
     for food in await asyncio.gather(*order):
-        cost += food['price']
-        print(f'${food["price"]} {food["name"]}')
-    print(f'Subtotal: ${round(cost, 2)}')
+        if food['category'] == 'Burgers':
+            burgers.append(food)
+        elif food['category'] == 'Sides':
+            sides.append(food)
+        elif food['category'] == 'Drinks':
+            drinks.append(food)
+        else:
+            print('Item doesnt exist')
+
+    burgers = list(sorted(burgers, key=lambda item: item['price'], reverse=True))
+    sides = list(sorted(sides, key=lambda item: item['price'], reverse=True))
+    drinks = list(sorted(drinks, key=lambda item: item['price'], reverse=True))
+
+    while len(burgers) > 0 and len(sides) > 0 and len(drinks) > 0:
+        combos.append([burgers.pop(0), sides.pop(0), drinks.pop(0)])
+
+    for combo in combos:
+        price = round(0.85 * (combo[0]["price"] + combo[1]["price"] + combo[2]["price"]), 2)
+        print(f'${price} Burger Combo')
+        print(f'\t{combo[0]["name"]}')
+        print(f'\t{combo[1]["size"]} {combo[1]["subcategory"]}')
+        print(f'\t{combo[2]["size"]} {combo[2]["subcategory"]}')
+        cost += price
+
+    for burger in burgers:
+        print(f'${burger["price"]} {burger["name"]}')
+        cost += burger['price']
+
+    for side in sides:
+        print(f'${side["price"]} {side["size"]} {side["subcategory"]}')
+        cost += side['price']
+
+    for drink in drinks:
+        print(f'${drink["price"]} {drink["size"]} {drink["subcategory"]}')
+        cost += drink['price']
+
+    print(f'\nSubtotal: ${round(cost, 2)}')
     tax = round(0.05 * cost, 2)
     print(f'Tax: ${tax}')
-    print(f'Total: ${cost + tax}')
+    print(f'Total: ${round(cost + tax, 2)}')
     while True:
         purchase_confirmation = input(f'Would you like to purchase this order for $ (yes/no)? ')
         if purchase_confirmation == 'yes':
@@ -83,7 +136,7 @@ async def main():
             print('Not a valid choice')
             continue
     while True:
-        another_order = input('Would you like to make another oder (yes/no)? ')
+        another_order = input('Would you like to make another order (yes/no)? ')
         if another_order == 'yes':
             await take_order(inventory, order)
             break
@@ -97,3 +150,4 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+    # asyncio.run(sort_order())
